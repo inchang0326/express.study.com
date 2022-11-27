@@ -1,3 +1,4 @@
+const { Client } = require("pg");
 const express = require("express");
 const cors = require("cors");
 const app = express();
@@ -6,38 +7,68 @@ const port = 8080;
 app.use(express.json());
 app.use(cors());
 
+var client = new Client({
+  user: "steady",
+  host: "localhost",
+  database: "express_study_db",
+  password: "awds1329",
+  port: 5432,
+});
+
+client.connect((err) => {
+  if (err) {
+    console.error("db conn error!", err.stack);
+  } else {
+    console.log("db conn success!");
+  }
+});
+
 app.get("/products", (req, res) => {
-  res.send({
-    products: [
-      {
-        id: 1,
-        name: "농구공",
-        price: 100000,
-        seller: "조던",
-        imageUrl: "images/products/basketball1.jpeg",
-      },
-      {
-        id: 2,
-        name: "축구공",
-        price: 50000,
-        seller: "메시",
-        imageUrl: "images/products/soccerball1.jpg",
-      },
-      {
-        id: 3,
-        name: "키보드",
-        price: 10000,
-        seller: "그랩",
-        imageUrl: "images/products/keyboard1.jpg",
-      },
-    ],
+  const sql = "SELECT * FROM products";
+
+  client.query(sql, (err, result) => {
+    if (err) {
+      console.log(err.stack);
+      res.sendStatus(500);
+    } else {
+      res.status(200).json({
+        products: result.rows,
+      });
+    }
   });
 });
 
-app.post("/products", (req, res) => {
-  res.send("상품이 등록되었습니다.");
+app.get("/products/:id", (req, res) => {
+  const params = req.params;
+  const { id } = params;
+  const sql = `SELECT * FROM products WHERE id =${id}`;
+
+  client.query(sql, (err, result) => {
+    if (err) {
+      console.log(err.stack);
+      res.sendStatus(500);
+    } else {
+      res.status(200).json(result.rows);
+    }
+  });
+});
+
+app.post("/product", (req, res) => {
+  console.log(req.body);
+  const sql =
+    "INSERT INTO products(name, price, seller, img_url, img_info) VALUES($1, $2, $3, $4, $5)";
+  const { name, price, seller, img_url = "", img_info } = req.body;
+
+  client.query(sql, [name, price, seller, img_url, img_info], (err, result) => {
+    if (err) {
+      console.log(err.stack);
+      res.sendStatus(500);
+    } else {
+      res.status(200).send("상품이 등록되었습니다!");
+    }
+  });
 });
 
 app.listen(port, () => {
-  console.log("그랩의 쇼핑몰 서버가 돌아가고 있습니다");
+  console.log("server on ...");
 });
