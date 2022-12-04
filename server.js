@@ -77,6 +77,26 @@ app.get("/products/:id", (req, res) => {
   });
 });
 
+// [GET] 배너 목록 조회
+app.get("/banners", (req, res) => {
+  const sql = "SELECT * FROM banners ORDER BY created_at DESC";
+
+  client.query(sql, (err, result) => {
+    result.rows.map((banner, index) => {
+      banner.img_url = `http://localhost:8080/${banner.img_url}`;
+    });
+
+    if (err) {
+      console.log(err.stack);
+      res.sendStatus(500);
+    } else {
+      res.status(200).json({
+        banners: result.rows,
+      });
+    }
+  });
+});
+
 // [POST] 상품 업로드
 app.post("/product", (req, res) => {
   console.log(req.body);
