@@ -128,6 +128,46 @@ app.post("/image", upload.single("image"), (req, res) => {
   });
 });
 
+// [POST] 주문하기
+app.post("/products/:id/order", (req, res) => {
+  const params = req.params;
+  const { id } = params;
+
+  client.query(
+    `SELECT * FROM products WHERE id =${id} FOR UPDATE NOWAIT`,
+    (err, result) => {
+      if (err) {
+        console.log(err.stack);
+        res.sendStatus(500);
+      }
+    }
+  );
+
+  client.query(
+    `UPDATE products SET status = '02' WHERE id =${id}`,
+    (err, result) => {
+      if (err) {
+        console.log(err.stack);
+        res.sendStatus(500);
+      }
+    }
+  );
+
+  const date = dayjs().format("YYYYMMDDHHmmss");
+  client.query(
+    "INSERT INTO orders(customer_id, product_id, order_dt, cancel_dt, created_at) VALUES($1, $2, $3, $4, $5)",
+    [1, id, date, "", date],
+    (err, result) => {
+      if (err) {
+        console.log(err.stack);
+        res.sendStatus(500);
+      } else {
+        res.status(200).send("상품 구매가 완료되었습니다!");
+      }
+    }
+  );
+});
+
 app.listen(port, () => {
   console.log("server on ...");
 });
